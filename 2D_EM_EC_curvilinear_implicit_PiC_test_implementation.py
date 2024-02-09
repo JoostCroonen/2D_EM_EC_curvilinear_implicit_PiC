@@ -29,28 +29,28 @@ def recompile_nb_code():
 
 
 # Simulation parameters
-nx, ny = 2048, 1
+nx, ny = 32, 64
 nxc, nyc = nx, ny
 nxn, nyn = nxc+1, nyc+1
-Lx, Ly = 32, 0.5
+Lx, Ly = 16, 32
 x0, y0 = 0, 0                       # offset of the origin
 dx, dy = Lx / nxc, Ly / nyc
 invdx, invdy = 1 / dx, 1 / dy
-dt = 0.015625                          # time step size
-nt = 3200                          # number of time steps
-ns = 1                              # number of species in plasma
-ppcx = 12                            # particles per cell in the x direction
-ppcy = 12                            # particles per cell in the x direction
+dt = 0.0001                          # time step size
+nt = 100                          # number of time steps
+ns = 4                              # number of species in plasma
+ppcx = 4                            # particles per cell in the x direction
+ppcy = 4                            # particles per cell in the x direction
 ppc = ppcx * ppcy
 npart = ns * ppcx * ppcy * nxc * nyc
 
 # Science case
 two_stream = False
 weibel = False
-thermal = True
+thermal = False
 drift = False
 guassian_tem_5x5 = False
-GEM = False
+GEM = True
 
 # Geometry presets
 CnC = False
@@ -59,7 +59,7 @@ squared = False
 sinus = False
 hypertan = False
 double_hypertan = False
-double_smooth_hs = False
+double_smooth_hs = True
 
 # Geometry parameters
 eps = 0.00               # perturbation parameter
@@ -91,8 +91,8 @@ np.random.seed(42)
 images = True
 save_data = True
 save_restart_data = True
-frequency_image = 100
-frequency_save = 200
+frequency_image = 50
+frequency_save = 50
 frequency_restart = 1000
 save_path = 'save_data/temp'
 restart_path = 'save_data/temp'
@@ -1428,7 +1428,7 @@ def myplot_field(A, title):
     plt.xlabel(r'$\xi$')
     plt.ylabel(r'$\eta$')
     plt.colorbar()
-    plt.title(title)
+    plt.title(title)i
 
 def myplot_field_save(A, name, title):
     plt.figure(title)
