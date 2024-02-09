@@ -16,8 +16,6 @@ CnC = False
 skewed = False
 squared = False
 sinus = False
-gauss = False
-double_gauss = False
 hypertan = False
 double_hypertan = False
 double_smooth_hs = True
@@ -61,12 +59,6 @@ def cartesian_to_general_map(x, y):
     elif sinus:
         xi = x + Lx * eps * np.sin(2 * np.pi * x / Lx)
         eta = y
-    elif gauss:
-        xi =  (Lx-2*eps*Lx)/Lx * x - eps*Lx*erf(Lx/2 - x) + eps*Lx
-        eta = y
-    elif double_gauss:
-        xi = x
-        eta = (Ly - 4 * eps * Ly) / Ly * y - eps * Ly * erf(Ly / 4 - y) - eps * Ly * erf(3 * Ly / 4 - y) + 2 * eps * Ly
     elif hypertan:
         xi = (Lx - 2 * eps * Lx) / Lx * x - eps * Lx * tanh((Lx / 2 - x)/tw) + eps * Lx
         eta = y
@@ -173,26 +165,6 @@ def perturbed_inverse_jacobian_elements(x, y):
         j31 = np.zeros_like(x, np.float64)
         j32 = np.zeros_like(x, np.float64)
         j33 = np.ones_like(x, np.float64)
-    elif gauss:
-        j11 = (Lx-2*eps*Lx)/Lx + 2/sqrt(pi) * eps * Lx * np.exp(-(Lx/2-x)**2)
-        j12 = np.zeros_like(x, np.float64)
-        j13 = np.zeros_like(x, np.float64)
-        j21 = np.zeros_like(x, np.float64)
-        j22 = np.ones_like(x, np.float64)
-        j23 = np.zeros_like(x, np.float64)
-        j31 = np.zeros_like(x, np.float64)
-        j32 = np.zeros_like(x, np.float64)
-        j33 = np.ones_like(x, np.float64)
-    elif double_gauss:
-        j11 = np.ones_like(x, np.float64)
-        j12 = np.zeros_like(x, np.float64)
-        j13 = np.zeros_like(x, np.float64)
-        j21 = np.zeros_like(x, np.float64)
-        j22 = (Ly-4*eps*Ly)/Ly + 2/sqrt(pi) * eps * Ly * np.exp(-(Ly/4-y)**2) + 2/sqrt(pi) * eps * Ly * np.exp(-(3*Ly/4-y)**2)
-        j23 = np.zeros_like(x, np.float64)
-        j31 = np.zeros_like(x, np.float64)
-        j32 = np.zeros_like(x, np.float64)
-        j33 = np.ones_like(x, np.float64)
     elif hypertan:
         j11 = (Lx-2*eps*Lx)/Lx + eps * Lx / (cosh(Lx/2-x)**2)
         j12 = np.zeros_like(x, np.float64)
@@ -254,57 +226,13 @@ def perturbed_inverse_jacobian_elements(x, y):
     return j11, j12, j13, j21, j22, j23, j31, j32, j33
 
 
-#def initiate_geometry():
-#    global xn, yn, xc, yc
-#    print('Invert grid to find physical grid locations')
-#    if CnC or skewed or squared or sinus or gauss or double_gauss or hypertan or double_hypertan or double_smooth_hs:
-#        if double_hypertan or double_gauss or double_smooth_hs:
-#            if double_hypertan:
-#                a = 'double_tanh_'
-#                e = str(eps).replace('.', '')
-#            if double_gauss:
-#                a = 'double_gauss_'
-#                e = str(eps).replace('.', '')
-#            if double_smooth_hs:
-#                a = 'double_smooth_hs_'
-#                e = str(r) + '_' + str(h) + '_' + str(s)
-#            name = 'save_data\\test_grids\\' + a + str(nx) + '_' + str(ny) + '_' + str(Lx) + '_' + str(Ly) + '_' + e
-#            namexc = name + '_xc.npy'
-#            nameyc = name + '_yc.npy'
-#            namexn = name + '_xn.npy'
-#            nameyn = name + '_yn.npy'
-#            if os.path.exists(namexc):
-#                xc = np.load(namexc)
-#                yc = np.load(nameyc)
-#                xn = np.load(namexn)
-#                yn = np.load(nameyn)
-#            else:
-#                xc, yc = cart_grid_calculator(xi_c, eta_c)
-#                xn, yn = cart_grid_calculator(xi_n, eta_n)
-#                np.save(namexc, xc)
-#                np.save(nameyc, yc)
-#                np.save(namexn, xn)
-#                np.save(nameyn, yn)
-#        else:
-#            xc, yc = cart_grid_calculator(xi_c, eta_c)
-#            xn, yn = cart_grid_calculator(xi_n, eta_n)
-#        dxmin = np.min(xn[1:, :] - xn[0:-1, :])
-#        dxmax = np.max(xn[1:, :] - xn[0:-1, :])
-#        dymin = np.min(yn[1:, :] - yn[0:-1, :])
-#        dymax = np.max(yn[1:, :] - yn[0:-1, :])
-#    else:
-#        xc, yc = xi_c, eta_c
-#        xn, yn = xi_n, eta_n
 def initiate_geometry():
     global xn, yn, xc, yc
     print('Invert grid to find physical grid locations')
-    if CnC or skewed or squared or sinus or gauss or double_gauss or hypertan or double_hypertan or double_smooth_hs:
-        if double_hypertan or double_gauss or double_smooth_hs or sinus or hypertan:
+    if CnC or skewed or squared or sinus or hypertan or double_hypertan or double_smooth_hs:
+        if double_hypertan or double_smooth_hs or sinus or hypertan:
             if double_hypertan:
                 a = 'double_tanh_'
-                e = str(eps).replace('.', '')
-            if double_gauss:
-                a = 'double_gauss_'
                 e = str(eps).replace('.', '')
             if double_smooth_hs:
                 a = 'double_smooth_hs_'
