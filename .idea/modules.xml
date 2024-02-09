@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/2D_EM_EC_curvilinear_implicit_PiC.iml" filepath="$PROJECT_DIR$/.idea/2D_EM_EC_curvilinear_implicit_PiC.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../2D_EM_EC_curvilinear_implicit_PiC/.idea/2D_EM_EC_curvilinear_implicit_PiC.iml" filepath="$PROJECT_DIR$/../2D_EM_EC_curvilinear_implicit_PiC/.idea/2D_EM_EC_curvilinear_implicit_PiC.iml" />
     </modules>
   </component>
 </project>

@@ -1,4 +1,4 @@
-# 2D Curvilinear Electromagnetic Energy Conserving Implicit PiC Code
+# 2D Electromagnetic Energy Conserving Curvilinear Implicit PiC Code
 # Made by Joost Croonen, Luca Pezini, Fabio Bacchini and Giovanni Lapenta
 
 
