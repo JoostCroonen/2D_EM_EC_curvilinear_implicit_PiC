@@ -389,11 +389,6 @@ def curlB(A1, A2, A3):
     return curl1, curl2, curl3
 
 
-def divergence(A1, A2, A3, fieldtype):
-
-    return
-
-
 @njit("f8[:](f8[:], f8[:], f8[:,:])")
 def grid_to_particle(x, y, A):
     Ap = np.zeros_like(x)
