@@ -1,4 +1,4 @@
-# 2D General Coordinate Energy Conserving Implicit PiC Code
+# 2D Curvilinear Electromagnetic Energy Conserving Implicit PiC Code
 # Made by Joost Croonen, Luca Pezini, Fabio Bacchini and Giovanni Lapenta
 
 
@@ -59,8 +59,6 @@ skewed = False
 squared = False
 sinus = False
 hypertan = False
-gauss = False
-double_gauss = False
 double_hypertan = False
 double_smooth_hs = False
 
@@ -118,7 +116,7 @@ if num_science_flags > 1:
     raise RuntimeError('Several incompatible science preset flags have been set!')
 if num_science_flags+restart > 1:
     raise RuntimeError('Restart flag and science preset flag are set simultaneously')
-geometry_flags = np.array([CnC, squared, skewed, sinus, gauss, hypertan, double_gauss, double_hypertan])
+geometry_flags = np.array([CnC, squared, skewed, sinus, hypertan, double_hypertan])
 num_geom_flags = np.sum(geometry_flags)
 if num_geom_flags  > 1:
     raise RuntimeError('Several incompatible geometry preset flags have been set!')
@@ -189,9 +187,6 @@ B3old = np.zeros((nxn, nyn))
 J1 = np.zeros((nxc, nyc))
 J2 = np.zeros((nxc, nyc))
 J3 = np.zeros((nxc, nyc))
-#J1bar = np.zeros((nxc, nyc))
-#J2bar = np.zeros((nxc, nyc))
-#J3bar = np.zeros((nxc, nyc))
 rho = np.zeros((nxn, nyn))
 rhoC = np.zeros((nxc, nyc))
 rhomC = np.zeros((nxc, nyc))
@@ -212,9 +207,6 @@ z = np.zeros(npart)
 u = np.zeros(npart)
 v = np.zeros(npart)
 w = np.zeros(npart)
-#uold = np.zeros(npart)
-#vold = np.zeros(npart)
-#wold = np.zeros(npart)
 q = np.ones(npart)
 qm = np.ones(npart)
 m = np.ones(npart)
@@ -686,12 +678,6 @@ def cartesian_to_general_part(x, y):
     elif sinus:
         xi = x + Lx * eps * np.sin(2 * np.pi * x / Lx)
         eta = y
-    #elif gauss:
-    #    xi =  (Lx-2*eps*Lx)/Lx * x - eps*Lx*erf(Lx/2 - x) + eps*Lx
-    #    eta = y
-    #elif double_gauss:
-    #    xi =  x
-    #    eta = (Ly-4*eps*Ly)/Ly * y - eps*Ly*erf(Ly/4 - y) - eps*Ly*erf(3*Ly/4 - y) + 2*eps*Ly
     elif hypertan:
         xi = (Lx - 2 * eps * Lx) / Lx * x - eps * Lx * tanh((Lx / 2 - x)/tw) + eps * Lx
         eta = y
@@ -715,6 +701,7 @@ def cartesian_to_general_part(x, y):
         eta = y
     return xi, eta
 
+
 #@njit('f8[:](f8[:,:], f8[:,:], f8[:,:], f8[:], f8[:], f8[:])')
 def phys_to_krylov(E1k, E2k, E3k, uk, vk, wk):
     ''' To populate the Krylov vector using physiscs vectors
@@ -736,28 +723,6 @@ def phys_to_krylov(E1k, E2k, E3k, uk, vk, wk):
 
     return ykrylov
 
-#@njit('f8[:](f8[:,:], f8[:,:], f8[:,:], f8[:], f8[:], f8[:])')
-#def phys_to_krylov(E1k, E2k, E3k, uk, vk, wk):
-#    ''' To populate the Krylov vector using physiscs vectors
-#    E1,E2,E3 are 2D arrays
-#    u,v,w of dimensions npart
-#    '''
-#    global nxc, nyc, nxn, nyn, npart, time_phys2kry
-#
-#    #start = time.time()
-#    ykrylov = np.zeros(3 * nxc * nyc + 3 * npart, np.float64)
-#
-#    for i in range(nxc):
-#        for j in range(nyc):
-#            ykrylov[0 + j + nyc * i] = E1k[i, j]
-#            ykrylov[nxc * nyc + j + nyc * i] = E2k[i, j]
-#            ykrylov[2 * nxc * nyc + j + nyc * i] = E3k[i, j]
-#    ykrylov[3 * nxc * nyc:3 * nxc * nyc + npart] = uk
-#    ykrylov[3 * nxc * nyc + npart:3 * nxc * nyc + 2 * npart] = vk
-#    ykrylov[3 * nxc * nyc + 2 * npart:3 * nxc * nyc + 3 * npart] = wk
-#    #time_phys2kry += time.time() - start
-#
-#    return ykrylov
 
 #@njit('Tuple((f8[:,:], f8[:,:], f8[:,:], f8[:], f8[:], f8[:]))(f8[:])')
 def krylov_to_phys(xkrylov):
@@ -828,7 +793,6 @@ def boundary_particles(x, y):
     return x, y
 
 
-#@njit("f8[:](f8[:])")
 def residual(krylov):
     global E1, E2, E3, B1, B2, B3, x, y, u, v, w, q, qm, dt, time_p2f, time_f2p, time_maxwell,  time_mover, time_newt, time_c2g_part, time_g2c_field, time_c2g_field, time_kry2phys, time_phys2kry
 
@@ -845,10 +809,6 @@ def residual(krylov):
     start = time.time()
     xbar = x + ubar * dt * .5
     ybar = y + vbar * dt * .5
-
-    ## Average particle position to half timestep
-    #xbar = (xnew + x) * .5
-    #ybar = (ynew + y) * .5
 
     # Periodic boundaries for particles
     xbar, ybar = boundary_particles(xbar, ybar)
@@ -896,26 +856,11 @@ def residual(krylov):
     resE2 = E2new - E2max
     resE3 = E3new - E3max
 
-    # Average B to integer timestep
-    #B1bar = (B1new + B1) * .5
-    #B2bar = (B2new + B2) * .5
-    #B3bar = (B3new + B3) * .5
-
-    # Average v to integer timestep
-    #ubar = (unew + u) * .5
-    #vbar = (vnew + v) * .5
-    #wbar = (wnew + w) * .5
-
     # Convert fields from general to cartesian coordinates
     start = time.time()
     Ex, Ey, Ez = general_to_cartesian_fieldC(E1bar, E2bar, E3bar)
     Bx, By, Bz = general_to_cartesian_fieldN(B1bar, B2bar, B3bar)
     time_g2c_field += time.time() - start
-
-    ## Move particles to general grid
-    #start = time.time()
-    #xgen2, ygen2 = cartesian_to_general_part(x, y)R
-    #time_c2g_part += time.time() - start
 
     # Interpolate fields to particles
     start = time.time()
@@ -952,8 +897,6 @@ def maxwell_solver(sol):
     time_kry2phys += time.time() - start
 
     start = time.time()
-    #xnewbar = x + unew * dt * .5
-    #ynewbar = y + vnew * dt * .5
 
     ubar = (unew + u) * .5
     vbar = (vnew + v) * .5
@@ -976,9 +919,6 @@ def maxwell_solver(sol):
     B3new = B3 - dt * curlE3
     time_maxwell += time.time() - start
 
-    #ubar = .5 * (u + unew)
-    #vbar = .5 * (v + vnew)
-    #wbar = .5 * (w + wnew)
     start = time.time()
     xgen, ygen = cartesian_to_general_part(xnew, ynew)
     time_c2g_part += time.time() - start
@@ -990,14 +930,10 @@ def maxwell_solver(sol):
     time_c2g_field += time.time() - start
 
     start = time.time()
-#   rhoCnew, rhomCnew = particle_to_grid_rhoC(xgen, ygen, q)
     time_p2f += time.time() - start
 
     x = xnew
     y = ynew
-    #uold = u
-    #vold = v
-    #wold = w
     u = unew
     v = vnew
     w = wnew
@@ -1016,11 +952,6 @@ def maxwell_solver(sol):
     J1 = J1new
     J2 = J2new
     J3 = J3new
-    #J1bar = J1_bar
-    #J2bar = J2_bar
-    #J3bar = J3_bar
-    #rhoC = rhoCnew
-    #rhomC = rhomCnew
     return
 
 
@@ -1039,12 +970,6 @@ def cartesian_to_general_map(x, y):
     elif sinus:
         xi = x + Lx * eps * np.sin(2 * np.pi * x / Lx)
         eta = y
-    elif gauss:
-        xi =  (Lx-2*eps*Lx)/Lx * x - eps*Lx*erf(Lx/2 - x) + eps*Lx
-        eta = y
-    elif double_gauss:
-        xi = x
-        eta = (Ly - 4 * eps * Ly) / Ly * y - eps * Ly * erf(Ly / 4 - y) - eps * Ly * erf(3 * Ly / 4 - y) + 2 * eps * Ly
     elif hypertan:
         xi = (Lx - 2 * eps * Lx) / Lx * x - eps * Lx * tanh((Lx / 2 - x)/tw) + eps * Lx
         eta = y
@@ -1107,7 +1032,6 @@ def perturbed_inverse_jacobian_elements(x, y):
         j31 = np.zeros(np.shape(x), np.float64)
         j32 = np.zeros(np.shape(x), np.float64)
         j33 = np.ones(np.shape(x), np.float64)
-
     elif skewed:
         j11 = np.ones_like(x, np.float64)
         j12 = np.zeros_like(x, np.float64)
@@ -1118,18 +1042,6 @@ def perturbed_inverse_jacobian_elements(x, y):
         j31 = np.zeros_like(x, np.float64)
         j32 = np.zeros_like(x, np.float64)
         j33 = np.ones_like(x, np.float64)
-
-    #if cylindrical:
-    #    j11 = x/sqrt(x**2 + y**2)
-    #    j12 = y/sqrt(x**2 + y**2)
-    #    j13 = np.zeros_like(x, np.float64)
-    #    j21 = -y/(x**2 + y**2)
-    #    j22 = x/(x**2 + y**2)
-    #    j23 = np.zeros_like(x, np.float64)
-    #    j31 = np.zeros_like(x, np.float64)
-    #    j32 = np.zeros_like(x, np.float64)
-    #    j33 = np.ones_like(x, np.float64)
-
     elif squared:
         j11 = 2*x
         j12 = np.zeros_like(x, np.float64)
@@ -1140,33 +1052,12 @@ def perturbed_inverse_jacobian_elements(x, y):
         j31 = np.zeros_like(x, np.float64)
         j32 = np.zeros_like(x, np.float64)
         j33 = np.ones_like(x, np.float64)
-
     elif sinus:
         j11 = 1. + 2. * np.pi * eps * np.cos(2. * np.pi * x / Lx) / Lx * Lx
         j12 = np.zeros_like(x, np.float64)
         j13 = np.zeros_like(x, np.float64)
         j21 = np.zeros_like(x, np.float64)
         j22 = np.ones_like(x, np.float64)
-        j23 = np.zeros_like(x, np.float64)
-        j31 = np.zeros_like(x, np.float64)
-        j32 = np.zeros_like(x, np.float64)
-        j33 = np.ones_like(x, np.float64)
-    elif gauss:
-        j11 = (Lx-2*eps*Lx)/Lx + 2/sqrt(pi) * eps * Lx * np.exp(-(Lx/2-x)**2)
-        j12 = np.zeros_like(x, np.float64)
-        j13 = np.zeros_like(x, np.float64)
-        j21 = np.zeros_like(x, np.float64)
-        j22 = np.ones_like(x, np.float64)
-        j23 = np.zeros_like(x, np.float64)
-        j31 = np.zeros_like(x, np.float64)
-        j32 = np.zeros_like(x, np.float64)
-        j33 = np.ones_like(x, np.float64)
-    elif double_gauss:
-        j11 = np.ones_like(x, np.float64)
-        j12 = np.zeros_like(x, np.float64)
-        j13 = np.zeros_like(x, np.float64)
-        j21 = np.zeros_like(x, np.float64)
-        j22 = (Ly-4*eps*Ly)/Ly + 2/sqrt(pi) * eps * Ly * np.exp(-(Ly/4-y)**2) + 2/sqrt(pi) * eps * Ly * np.exp(-(3*Ly/4-y)**2)
         j23 = np.zeros_like(x, np.float64)
         j31 = np.zeros_like(x, np.float64)
         j32 = np.zeros_like(x, np.float64)
@@ -1196,10 +1087,6 @@ def perturbed_inverse_jacobian_elements(x, y):
         j12 = np.zeros_like(x, np.float64)
         j13 = np.zeros_like(x, np.float64)
         j21 = np.zeros_like(x, np.float64)
-        #j22 = L*(-0.5*s*y*(1 - tanh(s*(-b1 + y))**2) + 0.5*s*(1 - tanh(s*(-b1 + y))**2)*(-o1 + 10*y) - 0.5*s*(1 - tanh(s*(-b2 + y))**2)*(-o1 + 10*y)
-        #         + 0.5*s*(1 - tanh(s*(-b2 + y))**2)*(o2 + y) - 0.5*s*(1 - tanh(s*(-b3 + y))**2)*(o2 + y) + 0.5*s*(1 - tanh(s*(-b3 + y))**2)*(-o3 + 10*y)
-        #         - 0.5*s*(1 - tanh(s*(-b4 + y))**2)*(-o3 + 10*y) + 0.5*s*(1 - tanh(s*(-b4 + y))**2)*(o4 + y) + 4.5*tanh(s*(-b1 + y)) - 4.5*tanh(s*(-b2 + y))
-        #         + 4.5*tanh(s*(-b3 + y)) - 4.5*tanh(s*(-b4 + y)) + 1.0)/mv
         j22 = L / mv * (1
                         - 0.5 * s * (1 - tanh(s * (y - b1)) ** 2) * y
                         + 0.5 * s * (1 - tanh(s * (y - b1)) ** 2) * (r * y - o1)
@@ -1237,13 +1124,10 @@ def perturbed_inverse_jacobian_elements(x, y):
 def initiate_geometry():
     global xn, yn, xc, yc
     print('Invert grid to find physical grid locations')
-    if CnC or skewed or squared or sinus or gauss or double_gauss or hypertan or double_hypertan or double_smooth_hs:
-        if double_hypertan or double_gauss or double_smooth_hs or sinus or hypertan:
+    if CnC or skewed or squared or sinus or hypertan or double_hypertan or double_smooth_hs:
+        if double_hypertan or double_smooth_hs or sinus or hypertan:
             if double_hypertan:
                 a = 'double_tanh_'
-                e = str(eps).replace('.', '')
-            if double_gauss:
-                a = 'double_gauss_'
                 e = str(eps).replace('.', '')
             if double_smooth_hs:
                 a = 'double_smooth_hs_'
@@ -1452,18 +1336,6 @@ def initiate_particles():
         xx, yy = np.mgrid[xp0:Lx-xp0:(nxc * ppcx * 1j), yp0:Ly-yp0:(nyc * ppcy * 1j)]
         x[s * (npart // ns):(s + 1) * (npart // ns)] = np.reshape(xx, npart // ns)
         y[s * (npart // ns):(s + 1) * (npart // ns)] = np.reshape(yy, npart // ns)
-        #u[s * (npart // ns):(s + 1) * (npart // ns)] = (vth * vs[s] * 2 * (np.random.rand(npart // ns) - .5))
-        #u[s * (npart // ns):(s + 1) * (npart // ns)], v[s * (npart // ns):(s + 1) * (npart // ns)], w[s * (npart // ns):(s + 1) * (npart // ns)] = (vth * vs[s] * 2 * (np.random.rand(npart // ns) - .5) for i in range(3))
-        #x[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] += s*dx/2./ppcx
-        #y[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] += s*dy/2./ppcy
-        #x[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] = x[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] % Lx
-        #y[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] = y[0+s*(npart//nspc):npart//nspc+s*(npart//nspc)] % Ly
-
-
-       #curlB1, curlB2, curlB3 = curlB(B1, B2, B3)
-       #u[s * (npart // ns):(s + 1) * (npart // ns)] = vs[s] * grid_to_particle(x, y, curlB1/ppc)[s * (npart // ns):(s + 1) * (npart // ns)]
-       #v[s * (npart // ns):(s + 1) * (npart // ns)] = vs[s] * grid_to_particle(x, y, curlB2/ppc)[s * (npart // ns):(s + 1) * (npart // ns)]
-       #w[s * (npart // ns):(s + 1) * (npart // ns)] = vs[s] * grid_to_particle(x, y, curlB3/ppc)[s * (npart // ns):(s + 1) * (npart // ns)]
         if thermal:
             u[s * (npart // ns):(s + 1) * (npart // ns)], v[s * (npart // ns):(s + 1) * (npart // ns)], w[s * (npart // ns):(s + 1) * (npart // ns)] = (vth * vs[s] * 2 * (np.random.rand(npart // ns) - .5) for i in range(3))
 
@@ -1498,25 +1370,12 @@ def initiate_particles():
             v[s * (npart // ns)+1:(s + 1) * (npart // ns)+1:4] -= vs[s] * 2 * vdrift
             w[s * (npart // ns)+1:(s + 1) * (npart // ns)+1:4] -= vs[s] * 2 * wdrift
 
-        #if counter_stream: v[int((s + 0.4) * (npart // ns)):int((s + 0.6) * (npart // ns))] = -v[int((s + 0.4) * (npart // ns)):int((s + 0.6) * (npart // ns))]
-
-
-        #q[0+s*(npart // ns):npart // ns + s * (npart // ns)] = qs[s] / (npart *.5 / Lx / Ly)
         q[0 + s * (npart // ns):npart // ns + s * (npart // ns)] = qs[s] * Lx * Ly / ((npart/ns) * 4 * pi)
-        #m[0+s*(npart // ns):npart // ns + s * (npart // ns)] = ms[s]
         qm[0+s*(npart // ns):npart // ns + s * (npart // ns)] = qs[s] / ms[s]
         m[0 + s * (npart // ns):npart // ns + s * (npart // ns)] = q[0+s*(npart // ns):npart // ns + s * (npart // ns)] / qm[0+s*(npart // ns):npart // ns + s * (npart // ns)]
 
-
-        #q = np.zeros(npart, np.float64)
-        #q[0:npart1] = np.ones(npart1) * WP1 ** 2 / (QM1 * npart1 / Lx / Ly)
-        #q[npart1:npart] = np.ones(npart2) * WP2 ** 2 / (QM2 * npart2 / Lx / Ly)
-
     Jx, Jy, Jz = particle_to_grid_J(x, y, u, v, w, q)
     J1, J2, J3 = cartesian_to_general_fieldC(Jx, Jy, Jz)
-    #print(q)
-    #print(m)
-    #print(qm)
     return
 
 def average_N2C(A):
@@ -1630,20 +1489,12 @@ def myplot_stream_save(x, y, A1, A2, title, name):
 def myplot_pert_map(xgrid, ygrid, field, xlabel='x', ylabel='y', title='title'):
     plt.figure(title + '_pert')
     plt.gca().set_aspect('equal')
-    #ax.scatter(xgrid.flatten(), ygrid.flatten(), c=field.flatten(), s=3)
     plt.pcolormesh(xgrid, ygrid, field, shading='auto')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
 
 def myplot_pert_map_save(xgrid, ygrid, field, name, title, xlabel='x', ylabel='y'):
-    #fig = plt.figure(title)
-    #ax = fig.add_subplot(111)
-    #ax.set_aspect(1)
-    #ax.scatter(xgrid.flatten(), ygrid.flatten(), c=field.flatten(), s=3)
-    #plt.xlabel(xlabel)
-    #plt.ylabel(ylabel)
-    #plt.title(title)
     plt.figure(title)
     plt.gca().set_aspect('equal')
     plt.pcolormesh(xgrid, ygrid, field, shading='auto')
@@ -1670,68 +1521,6 @@ def myplot_phase_save(x, u, it):
     plt.savefig('figs\\' + name + '.jpg')
     plt.close(name)
 
-def myplot_growthrate_E(a, title, ylabel):
-    plt.figure(title)
-    b = ''
-    if sinus: b = '_sin'
-    elif gauss: b = '_gauss'
-    elif hypertan: b = '_tanh'
-    filename = 'save_data\\diagnostic_data\\twostream_E2_' + str(nx) + '_' + str(ppc) + '_' + str(eps).replace('.', '') + b + '.txt'
-    if two_stream: np.savetxt(filename, a)
-    omega = np.sqrt(4 * pi * (npart / (Lx * Ly)) * (1.60217663e-19) ** 2 / (9.1093837e-31))
-    omega = 1
-    t = np.arange(0, nt)*dt/omega
-    # theory = t*omega/2-15
-    theory = 10 * a[0] * np.exp(t * omega / (2))
-    theory2 = 10 * a[0] * np.exp(t * np.sqrt(2) * omega / (2))
-    theory3 = 10 * a[0] * np.exp(t * omega)
-    theory4 = 10 * a[0] * np.exp(t * np.sqrt(2) * omega)
-    theory5 = 10 * a[0] * np.exp(t * .35 * omega)
-    # plt.plot(t, np.log(a))
-    # plt.plot(t, theory, linestyle='dashed')
-    plt.semilogy(t, a)
-    plt.semilogy(t, theory, linestyle='dashed', color='orange')
-    plt.semilogy(t, theory2, linestyle='dashed', color='green')
-    plt.semilogy(t, theory3, linestyle='dashed', color='red')
-    plt.semilogy(t, theory4, linestyle='dashed', color='blue')
-    plt.semilogy(t, theory5, linestyle='dashed', color='purple')
-    #plt.plot(t, t, linestyle='dotted')
-    plt.xlabel('time[omega^-1]')
-    plt.ylabel(ylabel)
-    plt.title(title)
-
-def myplot_growthrate_B(a, title, ylabel):
-    b = ''
-    if sinus: b = '_sin'
-    elif gauss: b = '_gauss'
-    elif hypertan: b = '_tanh'
-    filename = 'save_data\\diagnostic_data\\weibel_B2_' + str(nx) + '_' + str(ppc) + '_' + str(eps).replace('.', '') + b + '.txt'
-    if weibel: np.savetxt(filename, a)
-    plt.figure(title)
-    omega = 1
-    t = np.arange(0, nt) * dt / omega
-    # theory = t*omega/2-15
-    theory = 1000 * a[0] * np.exp(t * omega / (2))
-    theory2 = 1000 * a[0] * np.exp(t * np.sqrt(2) * omega / (2))
-    theory3 = 1000 * a[0] * np.exp(t * omega)
-    theory4 = 1000 * a[0] * np.exp(t * np.sqrt(2) * omega)
-    theory5 = 1000 * a[0] * np.exp(t * .35 * omega)
-    theory6 = 1000 * a[0] * np.exp(t * .2 * omega)
-    theory7 = 1000 * a[0] * np.exp(t * .283 * omega)
-    # plt.plot(t, np.log(a))
-    # plt.plot(t, theory, linestyle='dashed')
-    plt.semilogy(t, a)
-    plt.semilogy(t, theory, linestyle='dashed', color='orange')
-    plt.semilogy(t, theory2, linestyle='dashed', color='green')
-    plt.semilogy(t, theory3, linestyle='dashed', color='red')
-    plt.semilogy(t, theory4, linestyle='dashed', color='blue')
-    plt.semilogy(t, theory5, linestyle='dashed', color='purple')
-    plt.semilogy(t, theory6, linestyle='dashed', color='magenta')
-    plt.semilogy(t, theory7, linestyle='dashed', color='cyan')
-    # plt.plot(t, t, linestyle='dotted')
-    plt.xlabel('time[omega^-1]')
-    plt.ylabel(ylabel)
-    plt.title(title)
 
 def save_restart_files(it, restart_path):
     np.save(restart_path + '/B1_' + str(it).zfill(5) + '.npy', B1)
@@ -1750,6 +1539,7 @@ def save_restart_files(it, restart_path):
     np.save(restart_path + '/qm_' + str(it).zfill(5) + '.npy', qm)
     return
 
+
 def save_data_files(it, save_path):
     np.save(save_path + '/B1_' + str(it).zfill(5) + '.npy', B1)
     np.save(save_path + '/B2_' + str(it).zfill(5) + '.npy', B2)
@@ -1766,16 +1556,15 @@ def save_data_files(it, save_path):
     np.save(save_path + '/Uk_' + str(it).zfill(5) + '.npy', Uk[0:it+1])
     np.save(save_path + '/cfl_' + str(it).zfill(5) + '.npy', cfl[0:it+1])
 
+
 def save_logfile():
     a = ''
     b = ''
     R = ''
     if sinus: b = '_sin'
-    elif gauss: b = '_gauss'
     elif squared: b = '_square'
     elif skewed: b = '_skewed'
     elif CnC: b = '_CnC'
-    elif double_gauss: b = '_double_gauss'
     elif hypertan: b = '_tanh'
     elif double_hypertan: b  ='_double_tanh'
     if weibel: a = '_weibel'
@@ -1853,6 +1642,7 @@ def create_file_structure():
     restart_path = 'save_data/restart/' + casestamp + timestamp
     os.mkdir(restart_path)
 
+
 def main():
     global time_init, time_energy, time_IO, save_path, restart_path, B1, B2, B3, x, y, u, v, w, q
     print('Start')
@@ -1906,19 +1696,10 @@ def main():
 
 
 
-
-
-
 start = time.time()
 main()
 time_tot += time.time() - start
 
-
-
-
-#g = np.array([[g11c[2,1], g12c[2,1], g13c[2,1]], [g21c[2,1], g22c[2,1], g23c[2,1]], [g31c[2,1], g32c[2,1], g33c[2,1]]])
-#j = np.array([[j11c[2,1], j12c[2,1], j13c[2,1]], [j21c[2,1], j22c[2,1], j23c[2,1]], [j31c[2,1], j32c[2,1], j33c[2,1]]])
-#J = np.array([[J11c[2,1], J12c[2,1], J13c[2,1]], [J21c[2,1], J22c[2,1], J23c[2,1]], [J31c[2,1], J32c[2,1], J33c[2,1]]])
 
 myplot_field(B1, 'B1')
 myplot_field(B2, 'B2')
@@ -1947,8 +1728,6 @@ myplot_diagnostic(cfl, 'CFL max', 'CFL number')
 myplot_diagnostic(sumDotCurlAv, 'sumDotCurlAv', 'sumDotCurlAv')
 #myplot_diagnostic(deltaU, 'deltaU', 'deltaU')
 myplot_phase_space(x, u, 'phase space')
-if two_stream: myplot_growthrate_E(E_test, 'growth rate', 'E^2')
-if weibel: myplot_growthrate_B(B_test, 'growth rate B', 'B^2')
 myplot_pert_map(xn, yn, B3, xlabel='x', ylabel='y', title='B3')
 
 #myplot_diagnostic(Uratio, 'Energy ratio fields to particles')
