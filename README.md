@@ -6,7 +6,7 @@ numpy, matplotlib, numba
 
 Guide:
 1) Chose the physics case you want to run (two stream instability, weibel instability, thermal plasma, TE mode, or GEM) and set the corresponding flag to True and all others to False
-2) Chose the geometry case you want to run and set the corresponding flag to True and all others to False
+2) Chose the geometry case you want to run and set the corresponding flag to True and all others to False and set the appropriate geometry parameters
    1) If 1D: Chose between Sinusoidal or Hyperbolic Tangent
    2) If 2D: Chose between CnC (based on Chacon and Chen 2016), skewed, squared, double hypertan, or double smooth heaviside
    3) If specifically doing the GEM case: Only double smooth heaviside is compatible
