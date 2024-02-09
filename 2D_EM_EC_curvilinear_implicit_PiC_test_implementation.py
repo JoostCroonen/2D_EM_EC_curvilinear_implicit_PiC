@@ -8,7 +8,6 @@ from numba import jit, njit, vectorize, guvectorize, float64, int32, uint32, cud
 import numba as nb
 import matplotlib.pyplot as plt
 from matplotlib import transforms
-from matplotlib import animation as anim
 from scipy.optimize import newton_krylov, minimize
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -89,7 +88,6 @@ NK_solver_flag = False
 np.random.seed(42)
 
 # Data saving and visualization
-animate = False
 images = True
 save_data = True
 save_restart_data = True
@@ -335,15 +333,6 @@ j23c = np.zeros((nxc, nyc))
 j31c = np.zeros((nxc, nyc))
 j32c = np.zeros((nxc, nyc))
 j33c = np.ones((nxc, nyc))
-
-
-# Animation
-if animate:
-    #frequency = nt//20
-    figAnim = plt.figure('Animation')
-    plt.rcParams['animation.ffmpeg_path'] = "C:\\FFmpeg\\bin\\ffmpeg.exe"
-    plt.rcParams['animation.bitrate'] = 100000
-    imsAnim = []
 
 
 
@@ -1684,10 +1673,6 @@ def main():
             #name = 'J3pert_' + str(it+1)
             #myplot_pert_map_save(xn, yn, J3, name, name)
             #val = np.sqrt(J1**2 + J2**2 + J3**2)
-            if animate:
-                val = E1
-                im = plt.imshow(val.T, origin='lower', extent=[0, Lx, 0, Ly], aspect='equal', vmin=-0.5, vmax=0.5)
-                imsAnim.append([im])
         if (((((it+1) % frequency_save) == 0) or (it == nt-1)) & save_data):
             save_data_files(it+1, save_path)
         if (((((it+1) % frequency_restart) == 0) or (it == nt-1)) & save_restart_data):
@@ -1741,11 +1726,6 @@ myplot_pert_map(xn, yn, B3, xlabel='x', ylabel='y', title='B3')
 #myplot_diagnostic(UfieldNormal, 'energy fields normalised')
 #myplot_diagnostic(UkNormal, 'energy particles normalised')
 #myplot_diagnostic(UtotalNormal, 'total energy from normalised kinetic and field energies')
-
-if animate:
-    an = anim.ArtistAnimation(figAnim, imsAnim, interval=1, repeat_delay=0, blit=True)
-    writer = anim.FFMpegWriter(fps=2)
-    an.save('phase.gif', writer=writer)
 
 
 print('')
