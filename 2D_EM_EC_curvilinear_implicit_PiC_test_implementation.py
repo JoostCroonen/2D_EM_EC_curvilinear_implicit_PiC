@@ -1428,7 +1428,7 @@ def myplot_field(A, title):
     plt.xlabel(r'$\xi$')
     plt.ylabel(r'$\eta$')
     plt.colorbar()
-    plt.title(title)i
+    plt.title(title)
 
 def myplot_field_save(A, name, title):
     plt.figure(title)
